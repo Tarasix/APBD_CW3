@@ -8,7 +8,7 @@ namespace Cwicz_3.DAL
 {
     public interface IDbService
     {
-        public IEnumerable <Student> GetStudents();
+            public IEnumerable<Student> GetStudents();
     }
 
 
