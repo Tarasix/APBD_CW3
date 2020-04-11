@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Cwicz_3.DAL;
 using Cwicz_3.Models;
+using Cwicz_3.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -28,6 +29,7 @@ namespace Cwicz_3
         public void ConfigureServices(IServiceCollection services)
         {
             //services.AddSingleton<IDbService>();
+            services.AddScoped<IStudentsDbService, SqlServerDbService>();
             services.AddControllersWithViews();
         }
 

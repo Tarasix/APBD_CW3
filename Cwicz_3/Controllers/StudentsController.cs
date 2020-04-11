@@ -13,100 +13,93 @@ namespace Cwicz_3.Controllers
     [Route("api/students")]
     public class StudentsController : ControllerBase
     {
-        //private readonly IDbService _dbService;
+        private readonly IDbService _dbService;
 
-        //public StudentsController(IDbService dbService)
-        //{
-        //    _dbService = dbService;
-        //}
+        public StudentsController(IDbService dbService)
+        {
+            _dbService = dbService;
+
+        }
+        [HttpDelete]
+        public IActionResult DeleteStudent(int id)
+        {
+            return Ok("Usuwanie ukończone");
+        }
+
+        [HttpPut]
+        public IActionResult PutStudent(int id)
+        {
+            return Ok("Aktualizacja dokończona");
+        }
+
 
         [HttpGet]
-        public IActionResult GetStudent()
+        public IActionResult GetStudents()
         {
-            //return Ok(_dbService.GetStudents());
-            List<Student> students = new List<Student>();
+
+            List<Student> listaStudentow = new List<Student>();
 
             using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s19461;Integrated Security=True"))
             using (var com = new SqlCommand())
             {
                 com.Connection = con;
-                com.CommandText = "select * from Student " +
-                    "inner join Enrollment on Student.IdEnrollment = Enrollment.IdEnrollment" +
-                    " inner join Studies on Studies.IdStudy = Enrollment.IdStudy";
+                com.CommandText = "select FirstName, LastName, birthdate, Studies.name, Enrollment.semester from Student " +
+                    "inner join Enrollment on Enrollment.IdEnrollment = Student.IdEnrollment " +
+                    "inner join Studies on Studies.IdStudy = Enrollment.IdStudy; ";
 
                 con.Open();
-
                 var dr = com.ExecuteReader();
-
                 while (dr.Read())
                 {
                     var st = new Student();
-                    st.BirthDate = dr["BirthDate"].ToString();
                     st.FirstName = dr["FirstName"].ToString();
                     st.LastName = dr["LastName"].ToString();
-                    st.StudiesName = dr["Name"].ToString();
-                    st.Semester = dr["Semester"].ToString();
-                    students.Add(st);
+                    st.BirthDate = dr["birthdate"].ToString();
+                    st.StudiesName = dr["name"].ToString();
+                    st.Semester = dr["semester"].ToString();
+
+                    listaStudentow.Add(st);
+
                 }
 
-                return Ok(students);
 
             }
+            return Ok(listaStudentow);
         }
-
-
         [HttpGet("{id}")]
-        public IActionResult GetStudent(String id)
+        public IActionResult GetEnrollment(int id)
         {
-            List<Enrollment> enrolments = new List<Enrollment>();
 
+            List<Enrollment> enList = new List<Enrollment>();
             using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s19461;Integrated Security=True"))
             using (var com = new SqlCommand())
             {
                 com.Connection = con;
-                com.CommandText = ("select Enrollment.IdEnrollment, Semester, IdStudy,StartDate from Student " +
+
+                com.CommandText = "select Enrollment.IdEnrollment, Semester, IdStudy,StartDate from Student " +
                     "inner join Enrollment on Enrollment.IdEnrollment = Student.IdEnrollment" +
-                    $" where IndexNumber=@id;");
+                    $" where IndexNumber=@id;";
+
                 com.Parameters.AddWithValue("id", id);
-
                 con.Open();
+                SqlDataReader dr = com.ExecuteReader();
 
-                var dr = com.ExecuteReader();
                 while (dr.Read())
                 {
-                    var enr = new Enrollment();
-                    enr.Semester = Convert.ToInt32(dr["Semester"]);
-                    enr.IdStudy = Convert.ToInt32(dr["IdStudy"]);
-                    enr.IdEnrollment = Convert.ToInt32(dr["IdEnrollment"]);
-                    enr.StartDate = dr["StartDate"].ToString();
-                    enrolments.Add(enr);
+                    var en = new Enrollment();
+                    en.IdEnrollment = dr.GetInt32(0);
+                    en.Semester = dr.GetInt32(1);
+                    en.IdStudy = dr.GetInt32(2);
+                    en.StartDate = dr["StartDate"].ToString();
+                    enList.Add(en);
+
                 }
 
-                return Ok(enrolments);
+                return Ok(enList);
             }
+
+
         }
-
-
-        [HttpPost]
-        public IActionResult CreateStudent(Student student)
-        {
-            student.IndexNumber = $"s{new Random().Next(1, 20000)}";
-            return Ok(student);
-        }
-
-
-        [HttpPut("{id}")]
-        public IActionResult AlterStudent(int id)
-        {
-            return Ok("Aktualizacja dokonczona");
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult DropStudent(int id)
-        {
-            return Ok("Usuwanie ukonczone");
-        }
-
 
     }
 }
