@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Cwicz_3.DAL;
+using Cwicz_3.Middlewares;
 using Cwicz_3.Models;
 using Cwicz_3.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -40,14 +43,48 @@ namespace Cwicz_3
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+          
+            
 
-            //app.UseHttpsRedirection();
+            app.UseMiddleware<LoggingMiddleware>();
+            app.Use(async (context, next) =>
+            {
+
+                if (!context.Request.Headers.ContainsKey("Index"))
+                {
+                    context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Podaj indeks");
+                    return;
+                }
+                else
+                {
+                    string index = context.Request.Headers["Index"].ToString();
+                    var connection = new SqlConnection("Data Source=db-mssql;Initial Catalog=s19461;Integrated Security=True");
+                    using (var com = new SqlCommand())
+                    {
+                        com.Connection = connection;
+                        com.CommandText = "select IndexNumber from Student";
+                        connection.Open();
+                        var dr = com.ExecuteReader();
+                        bool tmp = false;
+                        while (dr.Read())
+                        {
+                            if (dr["IndexNumber"].ToString().Equals(index))
+                                tmp = true;
+
+                        }
+                        if (!tmp)
+                        {
+                            context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound;
+                            await context.Response.WriteAsync("nie ma takiego indeksu");
+                            return;
+                        }
+                    }
+                    connection.Close();
+                }
+
+                await next();
+            });
 
             app.UseStaticFiles();
 
@@ -57,9 +94,7 @@ namespace Cwicz_3
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapControllers();
             });
         }
     }
