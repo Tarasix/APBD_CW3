@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using Cwicz_3.DAL;
-using Cwicz_3.Models;
+//using Cwicz_3.Models;
+using Cwicz_3.Models2;
+using Cwicz_3.Services;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -13,93 +16,88 @@ namespace Cwicz_3.Controllers
     [Route("api/students")]
     public class StudentsController : ControllerBase
     {
-        private readonly IDbService _dbService;
+       
+        private readonly IStudentsDbService _dbContext;
 
-        public StudentsController(IDbService dbService)
-        {
-            _dbService = dbService;
+        //public StudentsController(IStudentsDbService dbService)
+        //{
+        //    _dbService = dbService;
 
-        }
-        [HttpDelete]
-        public IActionResult DeleteStudent(int id)
+        //}
+
+        public StudentsController(IStudentsDbService context)
         {
-            return Ok("Usuwanie ukończone");
+            _dbContext = context;
         }
 
-        [HttpPut]
-        public IActionResult PutStudent(int id)
-        {
-            return Ok("Aktualizacja dokończona");
-        }
 
 
         [HttpGet]
-        public IActionResult GetStudents()
+        public ActionResult GetStudents()
         {
-
-            List<Student> listaStudentow = new List<Student>();
-
-            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s19461;Integrated Security=True"))
-            using (var com = new SqlCommand())
-            {
-                com.Connection = con;
-                com.CommandText = "select FirstName, LastName, birthdate, Studies.name, Enrollment.semester from Student " +
-                    "inner join Enrollment on Enrollment.IdEnrollment = Student.IdEnrollment " +
-                    "inner join Studies on Studies.IdStudy = Enrollment.IdStudy; ";
-
-                con.Open();
-                var dr = com.ExecuteReader();
-                while (dr.Read())
-                {
-                    var st = new Student();
-                    st.FirstName = dr["FirstName"].ToString();
-                    st.LastName = dr["LastName"].ToString();
-                    st.BirthDate = dr["birthdate"].ToString();
-                    st.StudiesName = dr["name"].ToString();
-                    st.Semester = dr["semester"].ToString();
-
-                    listaStudentow.Add(st);
-
-                }
-
-
-            }
-            return Ok(listaStudentow);
+            return Ok(_dbContext.GetStudents());
         }
-        [HttpGet("{id}")]
-        public IActionResult GetEnrollment(int id)
+
+        //[HttpPut("{id}")]
+        //public IActionResult ChangeStudent(int id, Student student)
+        //{
+
+        //    return Ok("Aktualizacja dokonana");
+        //}
+
+        [HttpPut("{id}")]
+        public IActionResult ModifyStudent(string id, string name, string surname,DateTime data)
         {
+            return Ok(_dbContext.ModifyStudent(id, name, surname ,data));
+        }
 
-            List<Enrollment> enList = new List<Enrollment>();
-            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s19461;Integrated Security=True"))
-            using (var com = new SqlCommand())
+        [HttpDelete("{id}")]
+        public IActionResult DeleteStudent(string id)
+        {
+            var response = _dbContext.DeleteStudent(id);
+
+            if (response != null)
             {
-                com.Connection = con;
-
-                com.CommandText = "select Enrollment.IdEnrollment, Semester, IdStudy,StartDate from Student " +
-                    "inner join Enrollment on Enrollment.IdEnrollment = Student.IdEnrollment" +
-                    $" where IndexNumber=@id;";
-
-                com.Parameters.AddWithValue("id", id);
-                con.Open();
-                SqlDataReader dr = com.ExecuteReader();
-
-                while (dr.Read())
-                {
-                    var en = new Enrollment();
-                    en.IdEnrollment = dr.GetInt32(0);
-                    en.Semester = dr.GetInt32(1);
-                    en.IdStudy = dr.GetInt32(2);
-                    en.StartDate = dr["StartDate"].ToString();
-                    enList.Add(en);
-
-                }
-
-                return Ok(enList);
+                return Ok(response);
             }
 
 
+
+            return NotFound("Nie mamy studentów");
         }
+
+
+        ////[HttpGet]
+        ////public IActionResult GetStudents()
+        ////{
+        ////    return Ok(_dbService.GetStudents());
+        ////}
+
+        //[HttpGet("{id}/enrollments")]
+        //public IActionResult GetEnrollments(string id)
+        //{
+        //    var res = _dbService.GetEnrollments(id);
+
+        //    if (res != null)
+        //        return Ok(res);
+
+        //    return NotFound();
+        //}
+
+        //[HttpPost]
+        //public IActionResult CreateStudent(Student student)
+        //{
+        //    // creating in database
+        //    student.IndexNumber = $"s{new Random().Next(1, 20000)}";
+        //    return Ok(student);
+        //}
+
+
+
+
+
 
     }
 }
+
+    

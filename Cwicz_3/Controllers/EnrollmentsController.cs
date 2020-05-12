@@ -1,15 +1,23 @@
-﻿using Cwicz_3.Models;
+﻿using Cwicz_3.DTO.Request;
 using Cwicz_3.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Cwicz_3.Controllers
 {
-    [Route("api/enrollments")]
+
     [ApiController]
+    [Route("api/enrollments")]
+
     public class EnrollmentsController : ControllerBase
     {
         private IStudentsDbService _dbService;
@@ -20,34 +28,70 @@ namespace Cwicz_3.Controllers
 
         }
 
-
+        [Route("api/promotions")]
         [HttpPost]
-        public IActionResult PutStudentOnSemester([FromBody]Student student)
+        public IActionResult PromoteStudent(PromoteStudentsRequests promote)
         {
-            Console.WriteLine(student.StudiesName);
-            if (student.FirstName == null || student.LastName == null || student.StudiesName == null ||
-                student.IndexNumber == null || student.BirthDate == null)
-            {
-                return BadRequest();
-            }
-            Enrollment czyIstnieje = _dbService.Rejestracja(student.StudiesName, student);
-            Console.WriteLine(czyIstnieje);
-            if (czyIstnieje == null) return BadRequest();
-
-            ObjectResult ob = new ObjectResult(czyIstnieje);
-            ob.StatusCode = 201;
-            return ob;
+            var res = _dbService.PromoteStudent(promote);
+            return Ok(res);
         }
-
-        [HttpPost("promotions")]
-        public IActionResult upgradeStudent([FromBody] Studies studie)
-        {
-            if (studie.Studiess == null || studie.Semester == null) return BadRequest();
-
-            ObjectResult ob = new ObjectResult(new SqlServerDbService().PromoteStudents(studie.Semester, studie.Studiess));
-            ob.StatusCode = 201;
-            return ob;
-        }
-
     }
 }
+   
+        //    public EnrollmentsController(IConfiguration configuration)
+    //    {
+    //        Configuration = configuration;
+    //    }
+
+    //    public IConfiguration Configuration { get; }
+
+
+    //    //[HttpPost]
+    //    //[Authorize(Roles = "employee")]
+    //    //public IActionResult EnrollStudent(EnrollStudentRequest request)
+    //    //{
+    //    //    try
+    //    //    {
+    //    //        return Created("", _dbService.EnrollStudent(request));
+    //    //    }
+    //    //    catch (Exception e)
+    //    //    {
+    //    //        return BadRequest();
+    //    //    }
+    //    //}
+
+
+    //    [HttpPost("login")]
+    //    public IActionResult Login(Student student)
+    //    {
+
+    //        var claims = new[]
+    //        {
+    //        new Claim(ClaimTypes.NameIdentifier, "1"),
+    //        new Claim(ClaimTypes.Name, "jan123"),
+    //        new Claim(ClaimTypes.Role, "adm"),
+    //        new Claim(ClaimTypes.Role, "stud"),
+
+    //        };
+
+    //        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration
+    //            ["SecretKey"])); 
+    //            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+    //        var token = new JwtSecurityToken
+    //            (
+    //            issuer: "Gakko",
+    //            audience: "Students",
+    //            claims: claims,
+    //            expires: DateTime.Now.AddMinutes(10),
+    //            signingCredentials: creds
+
+    //            );
+    //        return Ok(new
+    //        {
+    //            accessToken = new JwtSecurityTokenHandler().WriteToken(token),
+    //            refreshToken = Guid.NewGuid()
+    //        });
+    //    }
+
+    //}
+
